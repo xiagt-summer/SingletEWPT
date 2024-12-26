@@ -133,7 +133,7 @@ void Scanner::ReadScannerParams(std::string fname)
 		ScanningRangesFromFile(tableFileName);
 	}
 	
-	std::vector<std::string> paramNames{ "mh2", "a2", "b3", "b4", "sinTheta", "T" };
+	std::vector<std::string> paramNames{ "lambda", "a1", "x0", "b3", "b4", "a2_sign", "T" };
 
 	// check if some param was missing from the table, if yes try reading it from elsewhere
 	for (const std::string& param : paramNames)
@@ -354,12 +354,12 @@ void Scanner::FindTransitionPoints() {
 			// Put these in a vector and write to file
 			const int NCOLUMNS = 18;
 			std::vector<double> res(NCOLUMNS);
-			res[0] = GetFromMap(currentInput, "Mh1");
-			res[1] = GetFromMap(currentInput, "Mh2");
-			res[2] = GetFromMap(currentInput, "a2");
-			res[3] = GetFromMap(currentInput, "b4");
-			res[4] = GetFromMap(currentInput, "sinTheta");
-			res[5] = GetFromMap(currentInput, "b3");
+			res[0] = GetFromMap(currentInput, "lambda_G");
+			res[1] = GetFromMap(currentInput, "a1_G");
+			res[2] = GetFromMap(currentInput, "a2_sign_G");
+			res[3] = GetFromMap(currentInput, "x0_G");
+			res[4] = GetFromMap(currentInput, "b3_G");
+			res[5] = GetFromMap(currentInput, "b4_G");
 			res[6] = Tc;
 			res[7] = vphysByT;
 			res[8] = vJump;
@@ -398,12 +398,12 @@ void Scanner::WriteTemperatureData() {
 	for (ParameterMap map : resultsForT) {
 
 		double T = GetFromMap(map, "T");
-		res[0] = GetFromMap(currentInput, "Mh1");
-		res[1] = GetFromMap(currentInput, "Mh2");
-		res[2] = GetFromMap(currentInput, "a2");
-		res[3] = GetFromMap(currentInput, "b4");
-		res[4] = GetFromMap(currentInput, "sinTheta");
-		res[5] = GetFromMap(currentInput, "b3");
+		res[0] = GetFromMap(currentInput, "lambda_G");
+		res[1] = GetFromMap(currentInput, "a1_G");
+		res[2] = GetFromMap(currentInput, "a2_sign_G");
+		res[3] = GetFromMap(currentInput, "x0_G");
+		res[4] = GetFromMap(currentInput, "b3_G");
+		res[5] = GetFromMap(currentInput, "b4_G");
 		res[6] = GetFromMap(map, "T"); // this is now obviously T, not Tc
 		res[7] = GetFromMap(map, "phisqByT2"); // NOT v/T, but square of that
 		res[8] = GetFromMap(map, "vByT");
@@ -426,12 +426,12 @@ void Scanner::WriteDataLabels() {
 	// Phase transition labels 
 	std::ofstream f;
 	f.open("labels");
-	f << "1 mh1\n";
-	f << "2 mh2\n";
-	f << "3 a2\n";
-	f << "4 b4\n";
-	f << "5 sinTheta\n";
-	f << "6 b3\n";
+	f << "1 lambda\n";
+	f << "2 a1\n";
+	f << "3 a2_sign\n";
+	f << "4 x0\n";
+	f << "5 b3\n";
+	f << "6 b4\n";
 	f << "7 Tc\n";
 	f << "8 sqrt(2 Delta <phi^+phi>) / Tc\n";
 	f << "9 v/Tc jump\n";
@@ -448,12 +448,12 @@ void Scanner::WriteDataLabels() {
 
 	// T=0 labels
 	f.open("labels_T0");
-	f << "1 mh1\n";
-	f << "2 mh2\n";
-	f << "3 a2\n";
-	f << "4 b4\n";
-	f << "5 sinTheta\n";
-	f << "6 b3\n";
+	f << "1 lambda\n";
+	f << "2 a1\n";
+	f << "3 a2_sign\n";
+	f << "4 x0\n";
+	f << "5 b3\n";
+	f << "6 b4\n";
 	f << "7 stability\n";
 	f << "8 perturbativity\n";
 	f.close();
@@ -471,12 +471,12 @@ bool Scanner::CheckT0Stability(const ParameterMap &MSParams) {
 	// Write to T0 output file
 	const int NCOLUMNS = 8;
 	std::vector<double> res(NCOLUMNS);
-	res[0] = GetFromMap(currentInput, "Mh1");
-	res[1] = GetFromMap(currentInput, "Mh2");
-	res[2] = GetFromMap(currentInput, "a2");
-	res[3] = GetFromMap(currentInput, "b4");
-	res[4] = GetFromMap(currentInput, "sinTheta");
-	res[5] = GetFromMap(currentInput, "b3");
+	res[0] = GetFromMap(currentInput, "lambda_G");
+	res[1] = GetFromMap(currentInput, "a1_G");
+	res[2] = GetFromMap(currentInput, "a2_sign_G");
+	res[3] = GetFromMap(currentInput, "x0_G");
+	res[4] = GetFromMap(currentInput, "b3_G");
+	res[5] = GetFromMap(currentInput, "b4_G");
 	res[6] = (int) bGlobalMinimumIsEW;
 	res[7] = (int) bIsPerturbative;
 	AppendToFile("data_T0.dat", res);

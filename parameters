@@ -9,30 +9,36 @@
 # range_a2 for a2 etc. Each line in the file should have one just one value. 
 # Note that the program will prioritize these files when setting up scanning ranges
 
-# M_h2 (GeV)
-mh2_min				600
-mh2_max				600
-mh2_delta			5
+## Use Lagrangian different parametrization in the phenomenology
+# lambda in [0, 1]
+lambda_min          0.169971
+lambda_max          0.169971
+lambda_delta        0.01
 
-# a2
-a2_min				4.0
-a2_max				4.0
-a2_delta			0.1
+# a1 in [-1000, 1000] (GeV)
+a1_min              507.078
+a1_max              507.078
+a1_delta            5
 
-# sinTheta (this needs to be within |sinTheta| < 1/sqrt(2) = 0.707... )
-sinTheta_min			0.12
-sinTheta_max			0.12
-sinTheta_delta			0.02
+# x0 in [0, 1000] (GeV)
+x0_min              -21.7315
+x0_max              -21.7315
+x0_delta            5
 
-# b3 (GeV)
-b3_min				-75
-b3_max				-75
-b3_delta			50
+# b3 in [-1000, 1000] (Gev)
+b3_min              -42.4028
+b3_max              -42.4028
+b3_delta            5
 
-# b4
-b4_min				0.5
-b4_max				0.5
-b4_delta			0.25
+# b4 in [0, 1]
+b4_min              0.5
+b4_max              0.5
+b4_delta            0.01
+
+# a2 sign in {-1, 1}
+a2_sign_min         -1
+a2_sign_max         1
+a2_sign_delta       2
 
 # Temperature (GeV)
 T_min				60
@@ -51,7 +57,7 @@ loopOrderVeff			2
 loopOrderVeffT0			1
 
 ## Break T-loop once (v,x) == (0, 0) phase is found? Will still do a few temperatures there for derivatives
-stopAtSymmetricPhase		1
+stopAtSymmetricPhase		0
 
 ## Calculate quadratic Higgs condensate? (others not implemented ATM)
 calculateCondensates		1

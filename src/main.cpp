@@ -12,6 +12,68 @@ typedef std::chrono::high_resolution_clock::time_point TimeVar;
 #define Duration(a) std::chrono::duration_cast<std::chrono::seconds>(a).count()
 #define TimeNow() std::chrono::high_resolution_clock::now()
 
+
+void ConvertGuotaoParamsToLauri(const double lambda_G, const double a1_G, const double a2_sign_G,
+								const double x0_G, const double b3_G, const double b4_G,
+								double *mh2_L, double *sinTheta_L, double *a2_L, double *b3_L, double *b4_L) {
+	// Input parameters
+	double mh1 = ExperimentalInput::MH;
+	double v = 246.22;
+	double x0 = x0_G;
+	double mh1sq = mh1 * mh1;
+	double vsq = v * v;
+	double xsq = x0 * x0;
+	double lam = lambda_G;
+	double a1 = a1_G;
+	double b3 = b3_G;
+	double b4 = b4_G;
+
+	// Calculate params in phenomenology parametrization
+	double a2 = a2_sign_G * sqrt( (mh1sq - 2.*lam*vsq) * (mh1sq - b3*x0 - 2.*b4*xsq + 0.25*a1*vsq/x0) ) / (x0 * v) - 0.5*a1/x0;
+	// double mhh2 = 2. * lam * vsq;
+	// double mss2 = b3*x0 + 2.*b4*xsq - a1*vsq/(4.*x0);
+	// double musq = lam*vsq + 0.5*(a1+a2+x0)*x0;
+	// double mh2sq = mhh2 + mss2 - mh1sq;
+	// double b2 = -b3*x0 - b4*xsq - 0.25*a1*vsq/x0 - a2*vsq*0.5;
+
+	// Convert params in my Lagrangian to Lauri's.
+	// double mphisq_L = -musq + 0.5*a1*x0 + 0.5*a2*xsq;
+	double lam_L = lam;
+	double a1_L = a1 + 2*a2*x0;
+	*a2_L = a2;
+	double b1_L = -0.25 * (a1 + 2*a2*x0) * vsq;
+	// double mssq_L = b2 + 2*b3*x0 + 3*b4*xsq;
+	*b3_L = b3 + 3*b4*x0;
+	*b4_L = b4;
+	
+	double vsq_L = -4. * b1_L / a1_L;
+	double v_L = sqrt(vsq_L);
+
+	double mh1_L = ExperimentalInput::MH;
+	double mh1sq_L = mh1_L * mh1_L;
+	double mh2sq_L = 0.25*(-vsq_L*a1_L*a1_L + 8.*mh1sq_L*vsq_L*lam_L - 16.*vsq_L*vsq_L*lam_L*lam_L) / (mh1sq_L-2.*vsq_L*lam_L);
+	*mh2_L = sqrt(mh2sq_L);
+	double theta_L = 0.5*asin(a1_L*v_L/(mh2sq_L-mh1sq_L));
+	*sinTheta_L = sin(theta_L);
+
+	printf("Print Guotao's params...\n");
+	printf("lambda      : %lf\n", lambda_G);
+	printf("a1          : %lf\n", a1_G);
+	printf("a2_sign     : %lf\n", a2_sign_G);
+	printf("x0          : %lf\n", x0_G);
+	printf("b3          : %lf\n", b3_G);
+	printf("b4          : %lf\n", b4_G);
+	printf("\n\n");
+
+	printf("Print Lauri's params...\n");
+	printf("mh2         : %lf\n", *mh2_L);
+	printf("sinTheta    : %lf\n", *sinTheta_L);
+	printf("a2          : %lf\n", *a2_L);
+	printf("b3          : %lf\n", *b3_L);
+	printf("b4          : %lf\n", *b4_L);
+	printf("\n\n");
+}
+
 int main() {
 
 	using Complex = std::complex<double>;
@@ -21,7 +83,7 @@ int main() {
 
 	std::string statusFileName = "status";
 
-    std::cout << "====== Scanner options =====\n";
+	std::cout << "====== Scanner options =====\n";
 	scanner.PrintScanner();
 	std::cout << "============================\n\n"; 
 	std::cout << std::flush;
@@ -40,13 +102,26 @@ int main() {
 	long pointCount = 0;
 	long checkpointInterval = 10000;
 
-	for (double const &mh2 : GetFromMap(scanner.scanningRange, "mh2") ) 
-	for (double const &sinTheta : GetFromMap(scanner.scanningRange, "sinTheta") ) 
-	for (double const &a2 : GetFromMap(scanner.scanningRange, "a2") )  
-	for (double const &b3 : GetFromMap(scanner.scanningRange, "b3") ) 
-	for (double const &b4 : GetFromMap(scanner.scanningRange, "b4") ) 
+	for (double const &lambda_G : GetFromMap(scanner.scanningRange, "lambda") ) 
+	for (double const &a1_G : GetFromMap(scanner.scanningRange, "a1") ) 
+	for (double const &a2_sign_G : GetFromMap(scanner.scanningRange, "a2_sign") ) 
+	for (double const &x0_G : GetFromMap(scanner.scanningRange, "x0") )  
+	for (double const &b3_G : GetFromMap(scanner.scanningRange, "b3") ) 
+	for (double const &b4_G : GetFromMap(scanner.scanningRange, "b4") ) 
 	{
+		double mh2, sinTheta, a2, b3, b4;
+		ConvertGuotaoParamsToLauri(lambda_G, a1_G, a2_sign_G, x0_G, b3_G, b4_G, 
+								   &mh2, &sinTheta, &a2, &b3, &b4);
+
 		scanner.currentInput = {
+			// My six input params
+			{"lambda_G", lambda_G},
+			{"a1_G", a1_G},
+			{"a2_sign_G", a2_sign_G}, 
+			{"x0_G", x0_G},
+			{"b3_G", b3_G},
+			{"b4_G", b4_G},
+			// Lauri's parametrization
 			{"Mh1", ExperimentalInput::MH},
 			{"Mh2", mh2},
 			{"a2", a2},
@@ -95,7 +170,7 @@ int main() {
 
 		for (double T : GetFromMap(scanner.scanningRange, "T") ) 
 		{
-
+			
 			// RG running will not work if you forget to set this here!
 			scanner.SetTemperature(T);
 
@@ -172,7 +247,7 @@ int main() {
 					DEBUG("!!! Warning: Higgs condensate at T = " << T << ". New minimum is at (v, x) = (" << vNew << ", " << xNew 
 								<< "), used to be (" << v << ", " << x << ")");
 				}
-
+		
 				phisq = ( newMinimum.veffValue.real() - GetFromMap(minimum, "Veff.re") ) / (msqPhi_new - msqPhi);	
 			}
 
@@ -252,7 +327,7 @@ int main() {
 
 		scanner.FindTransitionPoints();
 
-	} // end parameter scan loops
+	}
 
 	double seconds = Duration(TimeNow() - startTime);
 	std::cout << "Scan complete, did " << pointCount << " points total. Time taken: " << seconds << "s.\n";
