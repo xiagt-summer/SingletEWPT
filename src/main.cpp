@@ -61,23 +61,23 @@ void ConvertGuotaoParamsToLauri(const double mh2_G, const double a1_G, const dou
 	double theta_L = 0.5*asin(a1_L*v_L/(mh2sq_L-mh1sq_L));
 	*sinTheta_L = sin(theta_L);
 
-	printf("Print Guotao's params...\n");
-	printf("mh2         : %lf\n", mh2_G);
-	printf("a1          : %lf\n", a1_G);
-	printf("a2          : %lf\n", a2_G);
-	printf("x           : %lf\n", x);
-	printf("b3          : %lf\n", b3_G);
-	printf("b4          : %lf\n", b4);
-	printf("sinTheta    : %lf\n", sinTheta_G);
-	printf("\n\n");
+	// printf("Print Guotao's params...\n");
+	// printf("mh2         : %lf\n", mh2_G);
+	// printf("a1          : %lf\n", a1_G);
+	// printf("a2          : %lf\n", a2_G);
+	// printf("x           : %lf\n", x);
+	// printf("b3          : %lf\n", b3_G);
+	// printf("b4          : %lf\n", b4);
+	// printf("sinTheta    : %lf\n", sinTheta_G);
+	// printf("\n\n");
 
-	printf("Print Lauri's params...\n");
-	printf("mh2         : %lf\n", *mh2_L);
-	printf("sinTheta    : %lf\n", *sinTheta_L);
-	printf("a2          : %lf\n", *a2_L);
-	printf("b3          : %lf\n", *b3_L);
-	printf("b4          : %lf\n", *b4_L);
-	printf("\n\n");
+	// printf("Print Lauri's params...\n");
+	// printf("mh2         : %lf\n", *mh2_L);
+	// printf("sinTheta    : %lf\n", *sinTheta_L);
+	// printf("a2          : %lf\n", *a2_L);
+	// printf("b3          : %lf\n", *b3_L);
+	// printf("b4          : %lf\n", *b4_L);
+	// printf("\n\n");
 }
 
 int main() {
