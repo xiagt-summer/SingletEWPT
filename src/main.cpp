@@ -12,38 +12,43 @@ typedef std::chrono::high_resolution_clock::time_point TimeVar;
 #define Duration(a) std::chrono::duration_cast<std::chrono::seconds>(a).count()
 #define TimeNow() std::chrono::high_resolution_clock::now()
 
-
-void ConvertGuotaoParamsToLauri(const double lambda_G, const double a1_G, const double a2_sign_G,
-								const double x0_G, const double b3_G, const double b4_G,
+void ConvertGuotaoParamsToLauri(const double mh2_G, const double a1_G, const double a2_G,
+								const double b3_G, const double sinTheta_G,
 								double *mh2_L, double *sinTheta_L, double *a2_L, double *b3_L, double *b4_L) {
 	// Input parameters
 	double mh1 = ExperimentalInput::MH;
-	double v = 246.22;
-	double x0 = x0_G;
-	double mh1sq = mh1 * mh1;
-	double vsq = v * v;
-	double xsq = x0 * x0;
-	double lam = lambda_G;
+	double mh2 = mh2_G;
 	double a1 = a1_G;
 	double b3 = b3_G;
-	double b4 = b4_G;
+	double a2 = a2_G;
 
+	// Lazy names for params
+	double sinTheta = sinTheta_G;
+	double cosTheta = sqrt(1.-sinTheta*sinTheta);
+	double sin2Theta = 2.*sinTheta*cosTheta;
+	double cos2Theta = 1. - 2.*sinTheta*sinTheta;
+
+	double mh1Sq = mh1*mh1;	
+	double mh2Sq = mh2*mh2;
+	double v = 246.22;
+	double vSq = v*v;
+	
 	// Calculate params in phenomenology parametrization
-	double a2 = a2_sign_G * sqrt( (mh1sq - 2.*lam*vsq) * (mh1sq - b3*x0 - 2.*b4*xsq + 0.25*a1*vsq/x0) ) / (x0 * v) - 0.5*a1/x0;
-	// double mhh2 = 2. * lam * vsq;
-	// double mss2 = b3*x0 + 2.*b4*xsq - a1*vsq/(4.*x0);
-	// double musq = lam*vsq + 0.5*(a1+a2+x0)*x0;
-	// double mh2sq = mhh2 + mss2 - mh1sq;
-	// double b2 = -b3*x0 - b4*xsq - 0.25*a1*vsq/x0 - a2*vsq*0.5;
+	double x = ((-sin2Theta * (mh1Sq-mh2Sq) / v) - a1) / (2*a2);
+	double xSq = x*x;
+	double mPhiSq = 0.5 * (mh1Sq + mh2Sq + (mh1Sq-mh2Sq)*cos2Theta);
+	double mSSq = 0.5 * (mh1Sq + mh2Sq - (mh1Sq-mh2Sq)*cos2Theta) + b3*x + a1*vSq/(4.*x);
+	double b2 = mSSq;
+	double b4 = 0.25 / xSq * (mh1Sq + mh2Sq - (mh1Sq-mh2Sq)*cos2Theta) - b3/(2*x) + a1*vSq/(8*x*x*x);
+	double lam = 0.25 / vSq * (mh1Sq + mh2Sq + (mh1Sq-mh2Sq)*cos2Theta);
 
-	// Convert params in my Lagrangian to Lauri's.
-	// double mphisq_L = -musq + 0.5*a1*x0 + 0.5*a2*xsq;
+	// Convert Pheno params into Lauri's parametrization.
 	double lam_L = lam;
-	double a1_L = a1 + 2*a2*x0;
+	double a1_L = a1 + 2*a2*x;
 	*a2_L = a2;
-	double b1_L = -0.25 * (a1 + 2*a2*x0) * vsq;
-	// double mssq_L = b2 + 2*b3*x0 + 3*b4*xsq;
-	*b3_L = b3 + 3*b4*x0;
+	double b1_L = -0.25 * (a1 + 2*a2*x) * vSq;
+	double mssq_L = b2 + 2*b3*x + 3*b4*xSq;
+	*b3_L = b3 + 3*b4*x;
 	*b4_L = b4;
 	
 	double vsq_L = -4. * b1_L / a1_L;
@@ -57,12 +62,13 @@ void ConvertGuotaoParamsToLauri(const double lambda_G, const double a1_G, const 
 	*sinTheta_L = sin(theta_L);
 
 	printf("Print Guotao's params...\n");
-	printf("lambda      : %lf\n", lambda_G);
+	printf("mh2         : %lf\n", mh2_G);
 	printf("a1          : %lf\n", a1_G);
-	printf("a2_sign     : %lf\n", a2_sign_G);
-	printf("x0          : %lf\n", x0_G);
+	printf("a2          : %lf\n", a2_G);
+	printf("x           : %lf\n", x);
 	printf("b3          : %lf\n", b3_G);
-	printf("b4          : %lf\n", b4_G);
+	printf("b4          : %lf\n", b4);
+	printf("sinTheta    : %lf\n", sinTheta_G);
 	printf("\n\n");
 
 	printf("Print Lauri's params...\n");
@@ -83,7 +89,7 @@ int main() {
 
 	std::string statusFileName = "status";
 
-	std::cout << "====== Scanner options =====\n";
+    std::cout << "====== Scanner options =====\n";
 	scanner.PrintScanner();
 	std::cout << "============================\n\n"; 
 	std::cout << std::flush;
@@ -102,25 +108,23 @@ int main() {
 	long pointCount = 0;
 	long checkpointInterval = 10000;
 
-	for (double const &lambda_G : GetFromMap(scanner.scanningRange, "lambda") ) 
+	for (double const &mh2_G : GetFromMap(scanner.scanningRange, "mh2") ) 
+	for (double const &sinTheta_G : GetFromMap(scanner.scanningRange, "sinTheta") ) 
 	for (double const &a1_G : GetFromMap(scanner.scanningRange, "a1") ) 
-	for (double const &a2_sign_G : GetFromMap(scanner.scanningRange, "a2_sign") ) 
-	for (double const &x0_G : GetFromMap(scanner.scanningRange, "x0") )  
+	for (double const &a2_G : GetFromMap(scanner.scanningRange, "a2") )  
 	for (double const &b3_G : GetFromMap(scanner.scanningRange, "b3") ) 
-	for (double const &b4_G : GetFromMap(scanner.scanningRange, "b4") ) 
 	{
 		double mh2, sinTheta, a2, b3, b4;
-		ConvertGuotaoParamsToLauri(lambda_G, a1_G, a2_sign_G, x0_G, b3_G, b4_G, 
+		ConvertGuotaoParamsToLauri(mh2_G, a1_G, a2_G, b3_G, sinTheta_G,
 								   &mh2, &sinTheta, &a2, &b3, &b4);
-
 		scanner.currentInput = {
-			// My six input params
-			{"lambda_G", lambda_G},
+			// My input params
+			{"Mh2_G", mh2_G},
 			{"a1_G", a1_G},
-			{"a2_sign_G", a2_sign_G}, 
-			{"x0_G", x0_G},
+			{"a2_G", a2_G},
 			{"b3_G", b3_G},
-			{"b4_G", b4_G},
+			{"sinTheta_G", sinTheta_G},
+
 			// Lauri's parametrization
 			{"Mh1", ExperimentalInput::MH},
 			{"Mh2", mh2},
@@ -154,6 +158,92 @@ int main() {
 			continue;
 		}
 
+		if (scanner.bOnlyXYZ) {
+			std::vector<double> TVector = GetFromMap(scanner.scanningRange, "T");
+			double Tmin = *std::min_element(TVector.begin(), TVector.end());
+			double Tmax = *std::max_element(TVector.begin(), TVector.end());
+			double Tc;
+			while(true) {
+				double T = (Tmin + Tmax) / 2.0;
+
+				// std::cout << T << "\n";
+				
+				scanner.SetTemperature(T);
+				ParameterMap paramsForDR;
+				if (scanner.bSolveBetas) {
+					paramsForDR = Renormalization::RunToScale(scanner.GetMatchingScale(), paramsAtPreviousT);
+				} else {
+					paramsForDR = MSParams;
+				}
+				paramsAtPreviousT = paramsForDR;
+
+				bool bIsPerturbative = Renormalization::CheckPerturbativity(paramsForDR);
+
+				double scale3D = scanner.Get3DScale();
+				ParameterMap paramsDR = DimRed::IntegrateHardModes(T, paramsForDR, scanner.loopOrderDR, scale3D, bDoDim6, bNLOCubics);
+				
+				bool bComplex = false;
+				if (paramsDR["mSSq"] < 0) bComplex = true;
+
+				ParameterMap paramsSM = DimRed::IntegrateSingletSoftModes(paramsDR, scanner.loopOrderDR, bDoDim6, bNLOCubics);
+
+				double lambda = GetFromMap(paramsSM, "lambda");
+				double msq = GetFromMap(paramsSM, "msqPhi");
+				double g1sq = GetFromMap(paramsSM, "g1sq");
+				double g2sq = GetFromMap(paramsSM, "g2sq");
+				double c60 = GetFromMap(paramsSM, "c60");
+				double c6 = GetFromMap(paramsSM, "c6");
+				
+				// Get exact RG revolution for the mass: evolve Higgs mass term from scale3d to g2sq
+				double f3D = 51.0/16.0*g2sq*g2sq + 9.0*g2sq*lambda - 12.0*lambda*lambda - 5.0/16.0*g1sq*g1sq
+					  		 - 9.0/8.0*g1sq*g2sq + 3.0*g1sq*lambda;
+				msq -= 1.0/(16.0*PI*PI)*f3D*log(g2sq/scale3D);
+
+				// dim-6 error estimate
+				double dim6Coeff = c60 + c6;
+				double lambda4D = GetFromMap(paramsForDR, "lambda");
+				double vErr = -3.0*dim6Coeff/(8.0*lambda4D);
+
+				// Get dimensionless couplings x, y, z
+				double x = lambda / g2sq;
+				double y = msq / (g2sq*g2sq);
+				double z = g1sq / g2sq;
+
+				// std::cout << x << " " << y << " " << z  << " " << vErr << " " << dim6Coeff << " " << T << "\n";
+
+				if (y > 0) {
+					Tmax = T;
+				} else {
+					Tmin = T;
+				}
+
+				// The accuracy of T is set to 0.01 GeV.
+				if ( Tmax - Tmin <= 0.01) {
+					Tc = T;
+					const int NCOLUMNS = 13;
+					std::vector<double> res(NCOLUMNS);
+					res[0] = GetFromMap(scanner.currentInput, "Mh1");
+					res[1] = GetFromMap(scanner.currentInput, "Mh2");
+					res[2] = GetFromMap(scanner.currentInput, "a2");
+					res[3] = GetFromMap(scanner.currentInput, "b4");
+					res[4] = GetFromMap(scanner.currentInput, "sinTheta");
+					res[5] = GetFromMap(scanner.currentInput, "b3");
+					res[6] = Tc;
+					res[7] = x;
+					res[8] = y;
+					res[9] = z;
+					res[10] = vErr;
+					res[11] = bComplex;
+					res[12] = static_cast<int>(bIsPerturbative);
+
+					scanner.AppendToFile(scanner.xyzFileName, res);
+
+					break;
+				}
+			}
+			continue;
+		}
+
 		/******** Now the T-loop ********/
 		scanner.StartTemperatureLoop();
 
@@ -170,7 +260,7 @@ int main() {
 
 		for (double T : GetFromMap(scanner.scanningRange, "T") ) 
 		{
-			
+
 			// RG running will not work if you forget to set this here!
 			scanner.SetTemperature(T);
 
@@ -184,7 +274,7 @@ int main() {
 				paramsForDR = MSParams;
 			}
 			paramsAtPreviousT = paramsForDR;
-
+			// PrintMap(paramsForDR);
 			bool bIsPerturbative = Renormalization::CheckPerturbativity(paramsForDR);
 
 			// Dimensional reduction to 3D SM + singlet (incl. running to 3D scale)
@@ -205,7 +295,6 @@ int main() {
 			// Convert minimum location to 4D units and normalize by T (=> v/T)
 			double vByT = v / sqrt(T);
 			double xByT = x / sqrt(T);
-
 
 			// Relative VEV shifts due to dim-6 operators 
 			std::vector<double> fieldShiftsDim6{0.0, 0.0};
@@ -247,7 +336,7 @@ int main() {
 					DEBUG("!!! Warning: Higgs condensate at T = " << T << ". New minimum is at (v, x) = (" << vNew << ", " << xNew 
 								<< "), used to be (" << v << ", " << x << ")");
 				}
-		
+
 				phisq = ( newMinimum.veffValue.real() - GetFromMap(minimum, "Veff.re") ) / (msqPhi_new - msqPhi);	
 			}
 
@@ -327,7 +416,7 @@ int main() {
 
 		scanner.FindTransitionPoints();
 
-	}
+	} // end parameter scan loops
 
 	double seconds = Duration(TimeNow() - startTime);
 	std::cout << "Scan complete, did " << pointCount << " points total. Time taken: " << seconds << "s.\n";

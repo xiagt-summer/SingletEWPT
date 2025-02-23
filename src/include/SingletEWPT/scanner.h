@@ -59,6 +59,7 @@ public:
         std::cout << "bStopAtSymmetricPhase : " << bStopAtSymmetricPhase << "\n";
         std::cout << "bSolveBetas : " << bSolveBetas << "\n";
         std::cout << "bOnlySearchEWPT : " << bOnlySearchEWPT << "\n";
+        std::cout << "bOnlyXYZ : " << bOnlyXYZ << "\n";
 
 
         // Miscellaneous
@@ -126,6 +127,11 @@ public:
     ELoopOrder loopOrderVeff;
     ELoopOrder loopOrderVeffT0;
     ELoopOrderDR loopOrderDR;
+    /* Integrate heavy singlet field to have a SM-like effective theory or not. 
+    Calculate dimensionless couplings x, y, z at Tc only and skip EWPT computation. 
+    Will use a separate file for these */
+    bool bOnlyXYZ = false;
+
     bool bCalculateCondensates;
     // Break T-loop once (v,x) == (0, 0) phase is found?
     bool bStopAtSymmetricPhase;
@@ -147,6 +153,7 @@ public:
 
     std::string transitionsFileName = "transitions.dat";
     std::string temperatureDataFileName = "temperature_data.dat";
+    std::string xyzFileName = "xyz.dat";
 };
 
 #endif

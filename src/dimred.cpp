@@ -399,6 +399,138 @@ ParameterMap DimRed::IntegrateSoftModes(const ParameterMap &params3D,
 	return paramsUS;
 }
 
+ParameterMap DimRed::IntegrateSingletSoftModes(const ParameterMap &params3D, 
+		const ELoopOrderDR loopOrderDR, const bool bDoDim6, const bool bNLOCubics) 
+{
+
+	// TODO (if ever needed?)
+	if (bNLOCubics) {
+		Die("!!! NNLO cubic terms in DR not implemented yet...", 667);
+	}
+
+	bool bIsNLO = (loopOrderDR != ELoopOrderDR::LO);
+
+	// Matching scale
+	double scale = GetFromMap(params3D, "RGScale");
+
+	double mD1 = sqrt(GetFromMap(params3D, "mD1sq"));
+	double mD2 = sqrt(GetFromMap(params3D, "mD2sq"));
+	double mD3 = sqrt(GetFromMap(params3D, "mD3sq"));
+
+	double h3 = GetFromMap(params3D, "h3");
+	double hp3 = GetFromMap(params3D, "hp3");
+	double hpp3 = GetFromMap(params3D, "hpp3");
+	double omega3 = GetFromMap(params3D, "omega3");
+
+	// I only include these in 1-loop mass corrections, drop elsewhere.
+	double x3 = GetFromMap(params3D, "x3");
+	double xp3 = GetFromMap(params3D, "xp3");
+	double y3 = GetFromMap(params3D, "y3");
+	double yp3 = GetFromMap(params3D, "yp3");
+
+	double g1sq = GetFromMap(params3D, "g1sq");
+	double g2sq = GetFromMap(params3D, "g2sq");
+	double lambda = GetFromMap(params3D, "lambda");
+	double msqPhi = GetFromMap(params3D, "msqPhi");
+	double b1 = GetFromMap(params3D, "b1");
+	double b2 = GetFromMap(params3D, "b2");
+	double b3 = GetFromMap(params3D, "b3");
+	double b4 = GetFromMap(params3D, "b4");
+	double a1 = GetFromMap(params3D, "a1");
+	double a2 = GetFromMap(params3D, "a2");
+
+	// Resulting parameters at the ultrasoft scale
+	ParameterMap paramsUS;
+	paramsUS["RGScale"] = scale; // no running done in this function
+
+	/* ===== Matching ===== */
+	
+	// U(1) gauge coupling squared
+	{
+		double g1sqUS = g1sq;
+		paramsUS["g1sq"] = g1sqUS;
+	}
+	// SU(2) gauge coupling squared
+	{
+		double g2sqUS = g2sq * (1.0 - g2sq / (6*4*PI * mD2));
+		paramsUS["g2sq"] = g2sqUS;
+	}
+	// Higgs quartic self interaction 
+	{
+		double lambdaUS = lambda - 1.0/(2*4*PI) * (3*h3*h3 / mD2 + hp3*hp3 / mD1 + hpp3*hpp3 / (mD1 + mD2));
+
+		lambdaUS = lambdaUS - a1*a1/(8*b2) + 0.25*b1*(2.0*a2*a1/(b2*b2) - b3*a1*a1/(b2*b2*b2)) 
+						- a2*a2/(32*PI*sqrt(b2)) + (5.0*a2*a1*a1 - 12.0*lambda*a1*a1 - 3.0*b4*a1*a1 - 2.0*a2*b3*a1)/(32*PI*b2*sqrt(b2))
+						+ a1*a1*(5.0*a1*a1/4.0 - a1*b3 - b3*b3)/(32*PI*b2*b2*sqrt(b2));
+
+		paramsUS["lambda"] = lambdaUS;
+	}
+	// Singlet cubic self interaction
+	{
+		paramsUS["b3"] = 0;
+	}
+	// Singlet quartic self interaction
+	{
+		paramsUS["b4"] = 0;
+	}
+	// Singlet-Higgs cubic coupling
+	{
+		paramsUS["a1"] = 0;
+	}
+	// Singlet-Higgs quartic coupling
+	{
+		paramsUS["a2"] = 0;
+	}
+
+	/* All 2-loop corrections to singlet b1 and b2 go beyond g^4 accuracy */
+	// Singlet tadpole interaction
+	{
+		paramsUS["b1"] = 0;
+	}
+	// Singlet mass term squared
+	{
+		paramsUS["b2"] = 0;
+	}
+	// Higgs mass term squared
+	{
+		double msqPhiUS = msqPhi - 1.0/(4*PI) * (3*h3*mD2 + hp3*mD1);
+		
+		// 1-loop effects from omega3 is NLO because omega3 itself is O(g^4)
+		if (bIsNLO) {
+			msqPhiUS += -1.0/(4*PI) * 8*omega3*mD3;
+		} 
+		// 2 loop, all singlet contributions here go beyond O(g^4)
+		if (bIsNLO && loopOrderDR != ELoopOrderDR::NLONo2Loop) {
+			msqPhiUS += 1.0 / (4*4*PI*PI) * (3*g2sq*h3 - 3*h3*h3 - hp3*hp3 - 3.0/2.0 * hpp3*hpp3 
+						+ log(scale/(2.0*mD2)) * (-3.0/4.0 * g2sq*g2sq + 12*g2sq*h3 - 6*h3*h3)
+						- 2*hp3*hp3 * log(scale/(2.0*mD1)) - 3*hpp3*hpp3 * log(scale/(mD1 + mD2))
+			);
+			msqPhiUS += - a1*b1/(2*b2) - (2.0*a2*sqrt(b2) + a1*(a1-2.0*b3)/sqrt(b2))/(16*PI) + 
+						(-a2*a2/4.0 + 3.0*a2*b4/4.0 - 0.5*a2*a2*log(scale/(2*sqrt(b2))))/(4.0*4.0*PI*PI);
+		}
+		paramsUS["msqPhi"] = msqPhiUS;
+	}
+
+	/** Dimension 5 and 6 operators **/
+	// TODO. for now just copy them. corrections from A0 are subleading anyway.
+	if (bDoDim6) {
+		{
+			double c6 = a2*a2*a2/(192.0 * b2 * sqrt(b2) * PI);
+			paramsUS["c6"] = c6;
+		}
+	} 
+
+	paramsUS["c05"] = GetFromMap(params3D, "c05");
+	paramsUS["c23"] = GetFromMap(params3D, "c23");
+	paramsUS["c41"] = GetFromMap(params3D, "c41");
+	paramsUS["c60"] = GetFromMap(params3D, "c60");
+	paramsUS["c06"] = GetFromMap(params3D, "c06");
+	paramsUS["c42"] = GetFromMap(params3D, "c42");
+	paramsUS["c24"] = GetFromMap(params3D, "c24");
+
+	return paramsUS;
+}
+
 
 ParameterMap DimRed::DoFullDimRed(const double T, const ParameterMap &MSParams, 
         const ELoopOrderDR loopOrderDR, double const finalScale, const bool bDoDim6, const bool bNLOCubics) 

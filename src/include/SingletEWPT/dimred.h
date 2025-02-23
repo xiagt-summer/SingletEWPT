@@ -26,6 +26,11 @@ namespace DimRed {
     ParameterMap IntegrateSoftModes(const ParameterMap &MSParams, 
 		const ELoopOrderDR loopOrderDR, const bool bDoDim6, const bool bNLOCubics); 
 
+    /* Further integrate out the heavy singlet filed, ie reduce 3D SM + heavy singlet -> 3D SM.
+    No RG running is done here. Dim-5 and 6 opertors are TODO */
+    ParameterMap IntegrateSingletSoftModes(const ParameterMap &params3D,
+    const ELoopOrderDR loopOrderDR, const bool bDoDim6, const bool bNLOCubics);
+
     // Integrate out hard and soft modes, ie. do 4D SM + singlet -> 3D SM + singlet.
     ParameterMap DoFullDimRed(const double T, const ParameterMap &MSParams, 
         const ELoopOrderDR loopOrderDR, double const finalScale, const bool bDoDim6, const bool bNLOCubics);
